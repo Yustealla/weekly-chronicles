@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Indique l'emplacement du sitemap
+Sitemap: Sitemap: https://yustealla.github.io/weekly-chronicles/sitemap.xml
