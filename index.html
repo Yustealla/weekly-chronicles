@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weekly Chronicles — Chroniques fantastiques chaque semaine</title>
+<style>
+  /* ============================================================
+     PALETTE DU SITE
+     Base : brun nuit + or/bronze. Accents joyeux : teal, prune,
+     ambre, vert sauge. Chaque section réutilise --acc / --acc-clair
+     pour colorer filets, titres et lueurs.
+     ============================================================ */
+  :root{
+    --nuit:#171009;             /* fond principal, brun très sombre */
+    --nuit2:#221810;            /* fond des panneaux (modal) */
+    --brun-nuit:#2b2015;        /* brun utilisé pour le texte sur boutons or */
+    --carte:rgba(255,244,224,.045);   /* fond translucide des cartes */
+    --carte-claire:rgba(255,244,224,.07); /* variante au survol */
+    --texte:#f0e6d2;            /* texte principal, crème doré */
+    --texte-doux:#c9b99d;       /* texte secondaire atténué */
+    --bronze:#c9ab77;
+    --or:#e3c68e;
+    --or-pale:#f2ddb0;
+    /* Accents joyeux du même monde */
+    --teal:#5fb3a3;
+    --teal-clair:#9fd8cb;
+    --prune:#c76a8a;
+    --prune-clair:#e7a4bb;
+    --ambre:#e09b4e;
+    --ambre-clair:#f3c488;
+    --vert:#8aa893;
+    --bord:rgba(201,171,119,.28);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth} /* défilement fluide vers les ancres (#tarifs, #faq…) */
+  body{
+    font-family:var(--sans);
+    /* Superposition de halos colorés diffus sur le fond brun nuit :
+       chaque radial-gradient peint une teinte dans une zone donnée. */
+    background:
+      radial-gradient(1000px 700px at 78% -10%, rgba(227,198,142,.15) 0%, transparent 52%),
+      radial-gradient(800px 620px at 5% 18%, rgba(95,179,163,.12) 0%, transparent 50%),
+      radial-gradient(760px 600px at 92% 42%, rgba(199,106,138,.11) 0%, transparent 52%),
+      radial-gradient(820px 640px at 30% 85%, rgba(224,155,78,.10) 0%, transparent 55%),
+      radial-gradient(900px 500px at 60% 112%, rgba(138,168,147,.09) 0%, transparent 55%),
+      var(--nuit);
+    color:var(--texte);
+    overflow-x:hidden; /* empêche les débordements horizontaux des animations */
+    line-height:1.65;
+  }
+  /* Canvas plein écran où flotte la poussière féerique (voir <script>) */
+  #particules{position:fixed;inset:0;pointer-events:none;z-index:1}
+  main{position:relative;z-index:2} /* contenu au-dessus des particules */
+
+  /* ---------- NAVIGATION ---------- */
+  nav{
+    position:sticky;top:0;z-index:50; /* barre toujours visible, au-dessus du contenu */
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1.1rem 6vw;
+    background:rgba(23,16,9,.82);
+    backdrop-filter:blur(8px); /* effet verre dépoli */
+    border-bottom:1px solid var(--bord);
+  }
+  .logo{font-family:var(--serif);font-size:1.25rem;letter-spacing:.22em;text-transform:uppercase;color:var(--or-pale);text-shadow:0 0 18px rgba(227,198,142,.45)}
+  .logo span{color:var(--teal-clair)}
+  nav ul{display:flex;gap:1.9rem;list-style:none;font-size:.86rem}
+  nav a{color:var(--texte-doux);text-decoration:none;letter-spacing:.05em;text-transform:uppercase;transition:.2s}
+  /* Chaque lien du menu s'illumine d'une teinte différente au survol */
+  nav a:hover{color:var(--or);text-shadow:0 0 12px rgba(227,198,142,.6)}
+  nav li:nth-child(2) a:hover{color:var(--teal-clair);text-shadow:0 0 12px rgba(95,179,163,.6)}
+  nav li:nth-child(3) a:hover{color:var(--prune-clair);text-shadow:0 0 12px rgba(199,106,138,.6)}
+  nav li:nth-child(4) a:hover{color:var(--ambre-clair);text-shadow:0 0 12px rgba(224,155,78,.6)}
+  @media(max-width:700px){nav ul{display:none}} /* menu masqué sur petits écrans */
+
+  /* ---------- HERO (bandeau d'accueil) ---------- */
+  .hero{
+    min-height:92vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    padding:6rem 6vw 4rem;position:relative;
+    background:
+      linear-gradient(180deg,rgba(227,198,142,.08) 0%,transparent 30%),
+      radial-gradient(900px 500px at 50% 110%, rgba(95,179,163,.10) 0%, transparent 60%);
+  }
+  /* Petites étoiles générées en JS : position/teinte aléatoires, scintillement en boucle */
+  .etoile{position:absolute;border-radius:50%;filter:blur(.5px);animation:scintille 3s ease-in-out infinite}
+  @keyframes scintille{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.9;transform:scale(1.3)}}
+  .hero .monogramme{
+    width:120px;height:120px;margin-bottom:1.8rem;
+    filter:drop-shadow(0 0 16px rgba(227,198,142,.55)); /* halo doré autour du sigille */
+    animation:levite 6s ease-in-out infinite; /* léger mouvement de lévitation */
+  }
+  @keyframes levite{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  /* Titre en dégradé animé : le texte est transparent et le fond
+     multicolore (or→teal→prune→ambre) est découpé par les lettres
+     via background-clip, puis déplacé en boucle pour créer un reflet. */
+  h1{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(2.4rem,6vw,4.4rem); /* taille fluide selon l'écran */
+    letter-spacing:.14em;text-transform:uppercase;
+    background:linear-gradient(90deg,var(--or-pale) 15%, #fff3d6 32%, var(--teal-clair) 46%, var(--prune-clair) 60%, var(--ambre-clair) 76%, var(--or-pale) 95%);
+    background-size:250% 100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:flux 9s ease-in-out infinite;
+  }
+  @keyframes flux{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
+  .hero p.sous{
+    max-width:640px;margin:1.5rem auto 2.6rem;
+    font-family:var(--serif);font-size:1.08rem;color:var(--texte-doux);
+  }
+  /* Bouton d'action principal : or plein, halo lumineux au survol */
+  .cta{
+    display:inline-block;padding:.95rem 2.4rem;
+    border:1px solid var(--bronze);cursor:pointer;
+    background:linear-gradient(180deg,var(--or),var(--bronze));color:var(--brun-nuit);
+    font-size:.9rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;
+    transition:.25s;
+    box-shadow:0 0 0 rgba(227,198,142,0);
+  }
+  .cta:hover{
+    background:linear-gradient(180deg,var(--or-pale),var(--or));color:var(--brun-nuit);
+    transform:translateY(-2px);
+    box-shadow:0 0 28px rgba(227,198,142,.5);
+  }
+  .hero .micro{margin-top:1.3rem;font-size:.8rem;color:var(--texte-doux);letter-spacing:.06em}
+
+  /* ---------- SECTIONS ----------
+     Chaque section porte une couleur d'accent (--acc) qui teinte
+     son filet décoratif. On définit l'accent ici, puis les enfants
+     (.filet, .carte-extrait…) le réutilisent. */
+  section{padding:5rem 6vw;max-width:1100px;margin:0 auto;
+    --acc:var(--bronze); --acc-clair:var(--or);
+  }
+  section.teal{--acc:var(--teal); --acc-clair:var(--teal-clair)}
+  section.prune{--acc:var(--prune); --acc-clair:var(--prune-clair)}
+  section.ambre{--acc:var(--ambre); --acc-clair:var(--ambre-clair)}
+
+  h2{
+    font-family:var(--serif);font-weight:400;text-align:center;
+    font-size:clamp(1.6rem,3.5vw,2.3rem);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--or-pale);margin-bottom:.7rem;
+  }
+  /* Filet décoratif « — ✦ — » : deux dégradés fins de part et
+     d'autre de l'étoile, qui scintille doucement. */
+  .filet{
+    display:flex;align-items:center;justify-content:center;gap:.8rem;
+    margin:0 auto 2.8rem;color:var(--acc);font-size:.8rem;
+    animation:scintille 4s ease-in-out infinite;
+  }
+  .filet::before,.filet::after{content:"";width:70px;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent)}
+
+  /* Extraits : grille responsive, 3 cartes avec accents différents */
+  .extraits{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.6rem}
+  .carte-extrait{
+    background:var(--carte);border:1px solid var(--bord);border-radius:2px;
+    padding:2rem 1.8rem;position:relative;transition:.25s;
+    /* accent par carte : teal par défaut, ambre puis prune via nth-child */
+    --acc:var(--teal); --acc-clair:var(--teal-clair);
+  }
+  .carte-extrait:nth-child(2){--acc:var(--ambre); --acc-clair:var(--ambre-clair)}
+  .carte-extrait:nth-child(3){--acc:var(--prune); --acc-clair:var(--prune-clair)}
+  .carte-extrait:hover{
+    transform:translateY(-4px);
+    border-color:var(--acc);
+    background:var(--carte-claire);
+    /* color-mix mélange la couleur d'accent avec de la transparence
+       pour doser la lueur du survol */
+    box-shadow:0 10px 26px rgba(0,0,0,.35), 0 0 24px color-mix(in srgb, var(--acc) 35%, transparent);
+  }
+  .carte-extrait .num{
+    font-size:.72rem;color:var(--acc-clair);letter-spacing:.3em;text-transform:uppercase;
+  }
+  .carte-extrait h3{font-family:var(--serif);font-weight:400;margin:.55rem 0 .8rem;color:var(--or-pale)}
+  .carte-extrait p{font-family:var(--serif);font-style:italic;color:var(--texte-doux);font-size:.95rem}
+  .carte-extrait::before{
+    content:"❝";position:absolute;top:.9rem;right:1.2rem;
+    color:var(--acc);font-size:1.5rem;
+    text-shadow:0 0 12px color-mix(in srgb, var(--acc) 60%, transparent);
+  }
+
+  /* ---------- TARIFS ---------- */
+  /* Bascule mensuel/annuel : interrupteur avec pastille qui glisse
+     (position modifiée par la classe .annuel ajoutée en JS) */
+  .toggle-wrap{display:flex;justify-content:center;align-items:center;gap:.9rem;margin-bottom:2.6rem;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+  .toggle{position:relative;width:58px;height:28px;border-radius:999px;border:1px solid var(--bronze);background:var(--brun-nuit);cursor:pointer}
+  .toggle::after{content:"";position:absolute;top:3px;left:4px;width:20px;height:20px;border-radius:50%;background:var(--or);transition:.25s;box-shadow:0 0 10px rgba(227,198,142,.6)}
+  .toggle.annuel::after{transform:translateX(28px);background:var(--teal);box-shadow:0 0 12px rgba(95,179,163,.7)}
+  .reduction{color:var(--teal-clair);font-size:.72rem}
+
+  .tarifs{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.6rem;align-items:stretch}
+  .plan{
+    background:var(--carte);border:1px solid var(--bord);border-radius:2px;
+    padding:2.2rem 1.8rem;display:flex;flex-direction:column;position:relative;transition:.25s;
+    /* accent par plan : teal par défaut, or (.gold), prune (.prune) */
+    --acc:var(--teal); --acc-clair:var(--teal-clair);
+  }
+  .plan.gold{--acc:var(--bronze); --acc-clair:var(--or)}
+  .plan.prune{--acc:var(--prune); --acc-clair:var(--prune-clair)}
+  .plan:hover{
+    transform:translateY(-4px);background:var(--carte-claire);
+    border-color:var(--acc);
+    box-shadow:0 10px 26px rgba(0,0,0,.35), 0 0 22px color-mix(in srgb, var(--acc) 35%, transparent);
+  }
+  /* Carte « vedette » : encadrée d'or, double bordure interne (::before)
+     et halo doré pour attirer l'œil */
+  .plan.vedette{
+    border:1px solid var(--or);
+    background:linear-gradient(180deg,rgba(227,198,142,.13),rgba(201,171,119,.04));
+    box-shadow:0 10px 30px rgba(0,0,0,.4), 0 0 30px rgba(227,198,142,.16);
+  }
+  .plan.vedette:hover{border-color:var(--or-pale);box-shadow:0 10px 30px rgba(0,0,0,.4), 0 0 34px rgba(227,198,142,.3)}
+  .plan.vedette::before{
+    content:"";position:absolute;inset:6px;border:1px solid rgba(201,171,119,.3);
+    border-radius:2px;pointer-events:none; /* décoratif : ignore les clics */
+  }
+  .badge{
+    position:absolute;top:-12px;left:50%;transform:translateX(-50%); /* centré sur le bord haut */
+    background:linear-gradient(180deg,var(--or),var(--bronze));color:var(--brun-nuit);
+    font-size:.62rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    padding:.32rem .95rem;border-radius:999px;white-space:nowrap;
+    box-shadow:0 0 16px rgba(227,198,142,.4);
+  }
+  .plan h3{font-family:var(--serif);font-weight:400;font-size:1.4rem;letter-spacing:.06em;color:var(--acc-clair)}
+  .plan.vedette h3{color:var(--or-pale)}
+  .plan .prix{font-family:var(--serif);font-size:2.5rem;margin:.8rem 0 .1rem;color:var(--texte)}
+  /* [data-p] est le prix mensuel de référence lu par le JS pour
+     recalculer le tarif annuel (−20 %) */
+  .plan .prix small{font-size:.85rem;color:var(--texte-doux);font-family:var(--sans);letter-spacing:.04em}
+  .plan .desc{font-family:var(--serif);font-style:italic;font-size:.88rem;color:var(--texte-doux);margin-bottom:1.2rem}
+  .plan ul{list-style:none;margin-bottom:1.7rem;flex:1} /* flex:1 aligne les boutons en bas de carte */
+  .plan li{padding:.42rem 0;font-size:.9rem;color:var(--texte);border-bottom:1px dotted rgba(201,171,119,.25)}
+  .plan li:last-child{border-bottom:none}
+  .plan li::before{content:"✦ ";color:var(--acc);text-shadow:0 0 8px color-mix(in srgb, var(--acc) 60%, transparent)}
+  .plan .cta{text-align:center;font-size:.85rem}
+
+  /* ---------- TÉMOIGNAGES ---------- */
+  .temoins{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.6rem}
+  .temoin{
+    background:var(--carte);border:1px solid var(--bord);border-radius:2px;
+    padding:1.8rem;text-align:center;transition:.25s;
+    /* accent par témoignage : teal, ambre, prune */
+    --acc:var(--teal); --acc-clair:var(--teal-clair);
+  }
+  .temoin:nth-child(2){--acc:var(--ambre); --acc-clair:var(--ambre-clair)}
+  .temoin:nth-child(3){--acc:var(--prune); --acc-clair:var(--prune-clair)}
+  .temoin:hover{
+    background:var(--carte-claire);border-color:var(--acc);
+    box-shadow:0 10px 26px rgba(0,0,0,.35), 0 0 20px color-mix(in srgb, var(--acc) 35%, transparent);
+  }
+  .temoin::before{
+    content:"❝";display:block;color:var(--acc);font-size:1.5rem;margin-bottom:.6rem;
+    text-shadow:0 0 12px color-mix(in srgb, var(--acc) 60%, transparent);
+  }
+  .temoin p{font-family:var(--serif);font-style:italic;font-size:.95rem;color:var(--texte-doux)}
+  .temoin .qui{margin-top:1rem;font-size:.75rem;color:var(--acc-clair);letter-spacing:.14em;text-transform:uppercase}
+
+  /* ---------- FAQ ---------- */
+  /* <details>/<summary> natifs : plier/déplier sans JavaScript */
+  .faq details{border-bottom:1px solid rgba(201,171,119,.22);padding:1rem 0}
+  .faq summary{
+    cursor:pointer;font-family:var(--serif);font-size:1.05rem;color:var(--or-pale);list-style:none;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .faq summary::after{content:"+";color:var(--ambre-clair);font-size:1.1rem;transition:.2s}
+  .faq details[open] summary::after{transform:rotate(45deg)} /* le « + » devient « × » à l'ouverture */
+  .faq details p{margin-top:.7rem;font-size:.92rem;color:var(--texte-doux)}
+
+  /* ---------- PIED DE PAGE ---------- */
+  footer{
+    text-align:center;padding:3rem 6vw;font-size:.8rem;color:var(--texte-doux);
+    border-top:1px solid var(--bord);margin-top:3rem;
+    background:rgba(23,16,9,.6);letter-spacing:.06em;
+  }
+  footer .logo{font-size:.95rem;margin-bottom:.6rem}
+  /* Rangée de 5 étoiles ✦ aux couleurs de la palette du site */
+  footer .palet{font-size:.95rem;letter-spacing:.4em;margin-top:.7rem}
+  footer .palet i{font-style:normal}
+
+  /* ---------- MODAL (fenêtre d'abonnement) ----------
+     #voile couvre l'écran (display:none par défaut) ; la classe
+     .ouvert ajoutée en JS l'affiche en flex centré. */
+  #voile{
+    position:fixed;inset:0;background:rgba(10,7,4,.75);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;z-index:100;padding:1rem;
+  }
+  #voile.ouvert{display:flex}
+  .modal{
+    max-width:430px;width:100%;background:var(--nuit2);
+    border:1px solid var(--bronze);border-radius:2px;padding:2.4rem;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(227,198,142,.2);
+    animation:apparait .3s ease; /* petite entrée en fondu + glissement */
+  }
+  @keyframes apparait{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .modal h3{font-family:var(--serif);font-weight:400;color:var(--or-pale);font-size:1.35rem;letter-spacing:.05em;margin-bottom:.8rem}
+  .modal p{font-size:.92rem;color:var(--texte-doux);margin-bottom:1.5rem}
+  .modal .cta{width:100%}
+  .modal .fermer{background:none;border:none;color:var(--texte-doux);margin-top:1.1rem;cursor:pointer;font-size:.82rem;text-decoration:underline}
+</style>
+</head>
+<body>
+<!-- Canvas de fond : la poussière féerique y est dessinée par le script en bas de page -->
+<canvas id="particules"></canvas>
+
+<nav>
+  <div class="logo">Weekly <span>Chronicles</span></div>
+  <ul>
+    <li><a href="#chroniques">Les Chroniques</a></li>
+    <li><a href="#tarifs">Abonnements</a></li>
+    <li><a href="#temoins">Lecteurs</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+</nav>
+
+<main>
+  <!-- HERO : sigille + titre + accroche + premier bouton d'action -->
+  <section class="hero" id="haut">
+    <!-- Sigille magique : double étoile or + prune entrelacée, anneau teal -->
+    <svg class="monogramme" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="46" stroke="#c9ab77" stroke-width="1.2"/>
+      <circle cx="50" cy="50" r="41" stroke="#5fb3a3" stroke-width=".6" stroke-dasharray="2 5"/>
+      <path d="M50 16 L57 43 L84 50 L57 57 L50 84 L43 57 L16 50 L43 43 Z" fill="rgba(227,198,142,.2)" stroke="#e3c68e" stroke-width="1.3"/>
+      <path d="M50 24 L55 45 L76 50 L55 55 L50 76 L45 55 L24 50 L45 45 Z" fill="rgba(199,106,138,.22)" stroke="#c76a8a" stroke-width="1"/>
+      <circle cx="50" cy="50" r="5" fill="#f2ddb0"/>
+    </svg>
+    <h1>Weekly <em>Chronicles</em></h1>
+    <p class="sous">
+      Une échappatoire bien méritée vers monts et merveilles avec des mini-story d'un mois chacune pour vous emmenez dans une toute nouvelle aventure. 
+
+      Magie ancienne, cités suspendues, un monde laissée à votre créativité et votre imagination !
+    </p> 
+    <p class="sous"> 
+      Alors ? Vous venez ? Le voyage nous attends !
+    </p>
+    <a class="cta" href="#tarifs">Découvrir les abonnements</a>
+    <p class="micro">Première mini-story offerte · Résiliable à tout moment · Aucun sort de fidélité obligatoire</p>
+  </section>
+
+  <!-- EXTRAITS : 3 aperçus de chroniques, chacun avec sa couleur d'accent -->
+  <section id="chroniques" class="teal">
+    <h2>Un avant-goût des Chroniques</h2>
+    <div class="filet">✦</div>
+    <div class="extraits">
+      <article class="carte-extrait">
+        <div class="num">Chronique I</div>
+        <h3>La Magie des Mots Tournés</h3>
+        <p>« Toi qui possède ce pouvoir de donner vie à tout ce qui te fascine, veut-tu bien m'apprendre cette magie qui rend toute harmonie à chaque paradis perdu ?  »</p>
+      </article>
+      <article class="carte-extrait">
+        <div class="num">Chronique VII</div>
+        <h3>Les Jardins de l'Horloge Lente</h3>
+        <p>« Chaque graine plantée dans le jardin de l'horloge fleurissait une saison en retard. Ce n'était pas de la magie, disait le jardinier. C'était de la patience, mais à l'envers, et la patience à l'envers ressemblait beaucoup à la magie. »</p>
+      </article>
+      <article class="carte-extrait">
+        <div class="num">Chronique XII</div>
+        <h3>Le Pacte des Marées Basses</h3>
+        <p>« Les sirènes ne chantaient pas pour noyer les marins. Elles chantaient pour que la mer se souvienne des noms. Ce soir-là, la mer avait oublié le sien, et il fallut bien plus qu'une chanson. »</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- TARIFS : 3 plans, chacun porte data-plan (lu par le JS pour
+       personnaliser le titre du modal) et data-p pour le prix mensuel -->
+  <section id="tarifs">
+    <h2>Choisissez votre enchantement</h2>
+    <div class="filet">✦</div>
+    <div class="toggle-wrap">
+      <span id="lbl-mensuel">Mensuel</span>
+      <div class="toggle" id="toggle-fact" role="switch" aria-checked="false" tabindex="0"></div>
+      <span id="lbl-annuel">Annuel</span>
+      <span class="reduction">−20% avec l'année</span>
+    </div>
+    <div class="tarifs">
+      <!-- Plan gratuit : accent teal -->
+      <div class="plan">
+        <h3>Apprenti</h3>
+        <div class="prix">0€ <small>/ mois</small></div>
+        <p class="desc">Pour explorer l'atelier sans s'engager.</p>
+        <ul>
+          <li>1 mini-story complète offerte de votre choix</li>
+          <li>Accès aux archives du premier cycle</li>
+          <li>Newsletter de la pleine lune</li>
+        </ul>
+        <a class="cta" href="#" data-plan="Apprenti">Commencer gratuitement</a>
+      </div>
+
+      <!-- Plan vedette : accent or, badge « Le plus choisi » -->
+      <div class="plan vedette gold">
+        <div class="badge">Le plus choisi</div>
+        <h3>Écrivain des Brumes</h3>
+        <div class="prix"><span data-p="2.90">2,90€</span> <small>/ mois</small></div>
+        <p class="desc">L'abonnement des lecteurs fidèles du merveilleux.</p>
+        <ul>
+          <li>La mini-story du mois, livrée chapitre par chapitre chaque vendredi</li>
+          <li>Accès à toutes les archives (toutes les mini-stories passées)</li>
+        </ul>
+        <a class="cta" href="#" data-plan="Écrivain des Brumes">S'abonner</a>
+      </div>
+
+      <!-- Plan haut de gamme : accent prune, 2 € de plus que le plan or -->
+      <div class="plan prune">
+        <h3>Archimage</h3>
+        <div class="prix"><span data-p="4.90">4,90€</span> <small>/ mois</small></div>
+        <p class="desc">Pour ceux qui veulent vivre dans l'histoire.</p>
+        <ul>
+          <li>Tout l'abonnement Écrivain des Brumes</li>
+          <li>Illustrations exclusives des personnages</li>
+          <li>Droit de vote sur la prochaine intrigue</li>
+        </ul>
+        <a class="cta" href="#" data-plan="Archimage">S'abonner</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TÉMOIGNAGES : section avec accent prune -->
+  <section id="temoins" class="prune">
+    <h2>Ce que disent les lecteurs</h2>
+    <div class="filet">✦</div>
+    <div class="temoins">
+      <div class="temoin">
+        <p>« L'histoire est simple adorable, j'ai hâte de pouvoir lire la suite des péripéties de cette petite. »</p>
+        <div class="qui">— - Ami de l'aventurière</div>
+      </div>
+      <div class="temoin">
+        <p>« C'est ma petite victoire de la semaine ! »</p>
+        <div class="qui">— Rose, abonné Archimage</div>
+      </div>
+      <div class="temoin">
+        <p>« Ecrire ces histoires sont mon réconfort qui me permet d'emmener d'autres personnes dans mon monde magique ou je peux donner vie à ces petites créatures ! »</p>
+        <div class="qui">— Mai, L'aventurière</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ : accordéon natif <details>, section avec accent ambre -->
+  <section id="faq" class="faq ambre">
+    <h2>Questions des curieux</h2>
+    <div class="filet">✦</div>
+    <details>
+      <summary>Quand reçois-je ma mini-story ?</summary>
+      <p>Chaque mini-story dure un mois : un nouveau chapitre arrive chaque vendredi au crépuscule, par courriel et dans votre espace lecteur, jusqu'à la fin de l'aventure. Un nouveau monde commence dès le mois suivant.</p>
+    </details>
+    <details>
+      <summary>Comment se passe le paiement ?</summary>
+      <p>Par carte bancaire via un prestataire sécurisé. L'abonnement est sans engagement : vous pouvez résilier en deux clics depuis votre compte, à tout moment.</p>
+    </details>
+    <details>
+      <summary>Puis-je offrir un abonnement ?</summary>
+      <p>Oui — chaque plan peut être transformé en carte-cadeau calligraphiée, envoyée par courriel à la personne de votre choix.</p>
+    </details>
+    <details>
+      <summary>Et si je veux relire les anciennes mini-stories ?</summary>
+      <p>Les abonnés Écrivain des Brumes et Archimage accèdent à l'intégralité des archives dès le premier jour : toutes les mini-stories des mois passés, chacune complète avec tous ses chapitres.</p>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <div class="logo">Weekly <span>Chronicles</span></div>
+  <p>© 2026 Weekly Chronicles — Toutes les brumes sont réservées.<br/>Site de démonstration : les boutons d'abonnement sont illustratifs.</p>
+  <!-- Palette décorative : une étoile par couleur d'accent du site -->
+  <div class="palet">
+    <i style="color:#e3c68e">✦</i>
+    <i style="color:#5fb3a3">✦</i>
+    <i style="color:#c76a8a">✦</i>
+    <i style="color:#e09b4e">✦</i>
+    <i style="color:#8aa893">✦</i>
+  </div>
+</footer>
+
+<!-- MODAL : fenêtre affichée quand on clique sur un bouton d'abonnement -->
+<div id="voile">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modal-titre">Le parchemin est presque scellé…</h3>
+    <p id="modal-texte">Cette version du site est une maquette : le paiement n'est pas encore branché. Il suffira de relier les boutons à un système de facturation (Stripe, PayPal, etc.) pour que la magie opère.</p>
+    <button class="cta" id="modal-ok">Compris ✦</button>
+    <br/><button class="fermer" id="modal-fermer">fermer</button>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // 1) ÉTOILES COLORÉES DU HERO
+  // Crée 46 petites divs .etoile positionnées au hasard dans le hero,
+  // chacune cyclant sur une des 5 teintes de la palette.
+  // Le scintillement est géré par l'animation CSS "scintille".
+  // ============================================================
+  const hero = document.querySelector('.hero');
+  const teintesEtoiles = ['#c9ab77', '#e3c68e', '#5fb3a3', '#c76a8a', '#e09b4e'];
+  for (let i = 0; i < 46; i++) {
+    const e = document.createElement('div');
+    e.className = 'etoile';
+    const s = 1 + Math.random() * 3;           // taille aléatoire (1 à 4 px)
+    e.style.width = e.style.height = s + 'px';
+    e.style.left = Math.random() * 100 + '%';   // position aléatoire
+    e.style.top = Math.random() * 100 + '%';
+    e.style.animationDelay = (Math.random() * 3) + 's'; // décale le scintillement
+    e.style.background = teintesEtoiles[i % teintesEtoiles.length]; // teinte cyclique
+    e.style.boxShadow = '0 0 6px currentColor'; // halo assorti à la couleur
+    hero.appendChild(e);
+  }
+
+  // ============================================================
+  // 2) POUSSIÈRE FÉERIQUE MULTICOLORE
+  // Animation canvas : ~60 particules montent lentement en
+  // scintillant (opacité modulée par une phase sinusoïdale).
+  // requestAnimationFrame relance le rendu à chaque frame (~60 fps).
+  // ============================================================
+  const cv = document.getElementById('particules');
+  const ctx = cv.getContext('2d');
+  let W, H, pts = [];
+
+  // Le canvas doit suivre la taille de la fenêtre pour couvrir tout l'écran
+  function resize(){
+    W = cv.width = innerWidth; H = cv.height = innerHeight;
+  }
+  resize(); addEventListener('resize', resize);
+
+  // 9 teintes (RGB en chaîne) : bronze, or, teal, teal clair, prune,
+  // prune clair, ambre, ambre clair, vert sauge
+  const teintes = ['201,171,119', '227,198,142', '95,179,163', '159,216,203', '199,106,138', '231,164,187', '224,155,78', '243,196,136', '138,168,147'];
+
+  // Chaque particule : position, rayon, vitesse de dérive, opacité de base,
+  // teinte (cyclique) et phase propre pour décorreler le scintillement
+  for (let i = 0; i < 60; i++) {
+    pts.push({
+      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+      r: .6 + Math.random() * 1.9,
+      vy: -.12 - Math.random() * .28,          // vitesse verticale (montée)
+      vx: (Math.random() - .5) * .18,          // légère dérive horizontale
+      a: .12 + Math.random() * .42,            // opacité de base
+      c: teintes[i % teintes.length],
+      ph: Math.random() * Math.PI * 2          // phase du scintillement
+    });
+  }
+
+  // Boucle de rendu : efface le canvas puis redessine chaque particule
+  function boucle(){
+    ctx.clearRect(0, 0, W, H);
+    for (const p of pts) {
+      p.ph += .02;                             // fait tourner la phase du scintillement
+      p.x += p.vx; p.y += p.vy;                // déplace la particule
+      if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; } // réapparaît en bas
+      if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10;  // reboucle horizontal
+      // L'opacité oscille entre 60% et 100% de sa valeur de base
+      const scintille = .6 + .4 * Math.sin(p.ph);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + p.c + ',' + (p.a * scintille) + ')';
+      ctx.shadowColor = 'rgba(' + p.c + ',.8)';
+      ctx.shadowBlur = 8;                     // petit halo lumineux
+      ctx.fill();
+      ctx.shadowBlur = 0;                     // évite que le halo suive le prochain tracé
+    }
+    requestAnimationFrame(boucle);            // planifie la frame suivante
+  }
+  boucle();
+
+  // ============================================================
+  // 3) BASCULE MENSUEL / ANNUEL (−20 %)
+  // L'état booléen "annuel" pilote la pastille du toggle et le
+  // recalcul des prix : chaque [data-p] contient le prix mensuel
+  // de référence, on l'affiche tel quel ou réduit de 20 %.
+  // ============================================================
+  const tg = document.getElementById('toggle-fact');
+  let annuel = false;
+
+  // Recalcule et affiche le prix de tous les éléments [data-p],
+  // et met à jour la mention "/ mois" ou "/ mois, facturé à l'année"
+  function majPrix(){
+    document.querySelectorAll('[data-p]').forEach(el => {
+      const m = parseFloat(el.dataset.p);          // prix mensuel de référence
+      const v = annuel ? m * .8 : m;              // −20 % si facturation annuelle
+      el.textContent = v.toFixed(2).replace('.', ',') + '€'; // format français
+      el.parentElement.querySelector('small').textContent = annuel ? '/ mois, facturé à l\'année' : '/ mois';
+    });
+  }
+
+  // Inverse l'état, met à jour la pastille (classe .annuel pour la
+  // translation CSS) et l'attribut d'accessibilité, puis rafraîchit les prix
+  function bascule(){
+    annuel = !annuel;
+    tg.classList.toggle('annuel', annuel);
+    tg.setAttribute('aria-checked', annuel);
+    majPrix();
+  }
+  tg.addEventListener('click', bascule);
+  // Le toggle est focalisable au clavier : Enter/Espace doivent aussi l'activer
+  tg.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bascule(); } });
+
+  // ============================================================
+  // 4) MODAL D'ABONNEMENT
+  // Chaque bouton [data-plan] ouvre la fenêtre en personnalisant
+  // son titre avec le nom du plan. Fermeture par bouton, clic
+  // hors de la fenêtre ou touche Échap.
+  // ============================================================
+  const voile = document.getElementById('voile');
+  const titre = document.getElementById('modal-titre');
+
+  // Branche tous les boutons d'abonnement
+  document.querySelectorAll('[data-plan]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault(); // empêche la navigation du href="#"
+      titre.textContent = 'Plan « ' + btn.dataset.plan + ' » sélectionné';
+      voile.classList.add('ouvert'); // affiche le voile (display:none → flex)
+    });
+  });
+
+  // Trois façons de fermer : bouton principal, lien "fermer", ou clic sur le fond
+  const fermerModal = () => voile.classList.remove('ouvert');
+  document.getElementById('modal-ok').addEventListener('click', fermerModal);
+  document.getElementById('modal-fermer').addEventListener('click', fermerModal);
+  voile.addEventListener('click', e => { if (e.target === voile) fermerModal(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape') fermerModal(); });
+</script>
+</body>
+</html>
